@@ -89,68 +89,81 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		}
 	}
 
+
 	private boolean checkForWin(int r, int c) {
 		Class p = board[r][c].getClass();
-		int row = r;
-		int col = 0;
-		int count = 0;
 
 		//Row
-		while(count < 4 && col < columns)//stop when four in a row found
-		{
-			if(checkSpot(r, col, p))  //check each spot in column
-				++count;      //add one to counter when match is found
-			else
-				count = 0;      //start over if pattern interrupted
-			++col;          //go to next column
-
-			if(count >= 4)
-				return true;
-		}
-		count = 0;
+		if(checkForWin_Row(r, p)) return true;
 
 		//Column
+		if(checkForWin_Column(r, c, p)) return true;
+
+		//Diag left-->right
+		if(checkForWin_DiagonalLeftToRight(r, c, p)) return true;
+		int a;
+
+		//Diag right-->left
+		if(checkForWin_DiagonalRightToLeft(r, c, p)) return true;
+
+		return false;
+	}
+
+	private boolean checkForWin_Column(int row, int col, Class pieceClass) {
+		int count = 0;
+
 		while(count < 4 && row >= 0)    //stop when four in a row found
 		{
-			if(checkSpot(row, c, p))  //check each spot in column
+			if(checkSpot(row, col, pieceClass))  //check each spot in column
 				++count;      //add one to counter when match is found
 			else
 				count = 0;      //start over if pattern interrupted
 			--row;          //go down to next row
 
-
 			if(count >= 4)
 				return true;
 		}
 
-		//Diag left-->right
+		return false;
+	}
+
+	private boolean checkForWin_DiagonalLeftToRight(int r, int c, Class pieceClass) {
 		int a = Math.min(rows - 1 - r, c);
-		row = r + a;
-		col = c - a;
-		count = 0;
+		int row = r + a;
+		int col = c - a;
+		int count = 0;
+
 		while(count < 4 && row >= 0 && col < columns) {
-			if(checkSpot(row, col, p))
+			if(checkSpot(row, col, pieceClass))
 				++count;
 			else
 				count = 0;
+
 			if(count >= 4)
 				return true;
+
 			--row;
 			++col;
 		}
 
-		//Diag right-->left
-		a = Math.min(rows - 1 - r, columns - 1 - c);
-		row = r + a;
-		col = c + a;
-		count = 0;
+		return false;
+	}
+
+	private boolean checkForWin_DiagonalRightToLeft(int r, int c, Class pieceClass) {
+		int a = Math.min(rows - 1 - r, columns - 1 - c);
+		int row = r + a;
+		int col = c + a;
+		int count = 0;
+
 		while(count < 4 && row >= 0 && col >= 0) {
-			if(checkSpot(row, col, p))
+			if(checkSpot(row, col, pieceClass))
 				++count;
 			else
 				count = 0;
+
 			if(count >= 4)
 				return true;
+
 			--row;
 			--col;
 		}
@@ -158,8 +171,28 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		return false;
 	}
 
-	private boolean checkSpot(int r, int c, Class p) {
-		return board[r][c] != null && board[r][c].getClass().equals(p);
+	private boolean checkForWin_Row(int row, Class pieceClass) {
+		int col = 0;
+		int count = 0;
+
+		while(count < 4 && col < columns)//stop when four in a row found
+		{
+			if(checkSpot(row, col, pieceClass))  //check each spot in row
+				++count;      //add one to counter when match is found
+			else
+				count = 0;      //start over if pattern interrupted
+
+			++col;          //go to next column
+
+			if(count >= 4)
+				return true;
+		}
+
+		return false;
+	}
+
+	private boolean checkSpot(int row, int col, Class pieceClass) {
+		return board[row][col] != null && board[row][col].getClass().equals(pieceClass);
 	}
 
 	void draw(Graphics2D g2) {
@@ -248,6 +281,13 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		if(e.getID() == KeyEvent.KEY_RELEASED)
 			keyTracker.handleKeyReleased((KeyEvent)e);
 
+	}
+
+	private void incrementScore(GamePiece c) {
+		if(c instanceof RedChip)
+			++redScore;
+		else if(c instanceof BlackChip)
+			++blackScore;
 	}
 
 	public void keyPressed(KeyEvent event) {
@@ -385,13 +425,6 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		newPiece();
 		applet.repaint();
 
-	}
-
-	private void incrementScore(GamePiece c) {
-		if(c instanceof RedChip)
-			++redScore;
-		else if(c instanceof BlackChip)
-			++blackScore;
 	}
 
 }
