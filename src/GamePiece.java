@@ -1,10 +1,13 @@
 //Anthony R Whitaker
+
 import java.awt.*;
 
-public interface GamePiece
-{
+public interface GamePiece {
 	void draw(Graphics2D g2);
-	void move(int deltaY);
-	void setX(int x);
+
 	int getX();
+
+	void setX(int x);
+
+	void move(int deltaY);
 }
