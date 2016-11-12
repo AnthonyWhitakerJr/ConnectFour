@@ -1,5 +1,4 @@
-import java.util.*;
-import java.awt.event.*;
+import java.awt.event.KeyEvent;
 
 public class KeyTracker
 {
@@ -18,11 +17,6 @@ public class KeyTracker
 	public void handleKeyReleased(KeyEvent e)
 	{
 		keyState[e.getKeyCode()]=false;
-	}
-	
-	public void resetAllKeyStates()
-	{
-		Arrays.fill(keyState,false);
 	}
 	
 	public boolean isPressed(int i)
