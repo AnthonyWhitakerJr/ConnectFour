@@ -77,9 +77,9 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		if(turn >= 7 && checkForWin(r, c)) {
 			done = true;
 			score(board[r][c].getClass().getName());
-			if(board[r][c].getClass().getName().equals("whitaker.anthony.connectfour.RedChip"))
+			if(board[r][c] instanceof  RedChip)
 				reset("Red chip Wins");
-			else if(board[r][c].getClass().getName().equals("BlackChip"))
+			else if(board[r][c] instanceof BlackChip)
 				reset("Black chip Wins");
 		}
 		else if(turn == columns * rows) {
