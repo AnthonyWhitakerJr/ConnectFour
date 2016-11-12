@@ -16,8 +16,8 @@ import java.util.Objects;
  * @author Anthony R Whitaker
  */
 class Board implements MouseListener, FocusListener, Runnable, MouseMotionListener {
-	private final int RHeight;
-	private final int RWidth;
+	private final int cellHeight;
+	private final int cellWidth;
 	private final Applet applet;
 	private final GamePiece[][] board;
 	private final int columns;
@@ -30,19 +30,19 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 	private Clip clip;
 	private int finalRow;
 	private Image splashScreen;
-	private boolean isFocused, done;
-	private Thread loop;
-	private GamePiece piece;
+	private boolean isFocused, isGameOver;
+	private Thread dropPieceThread;
+	private GamePiece activePiece;
 	private int redScore;
 	private int turn;
 
 	Board(int row, int column, Dimension d, Applet a, Boolean focus) {
 		applet = a;
 
-		RWidth = (int)d.getWidth() / (column + 2);
-		RHeight = (int)d.getHeight() / (row + 2);
+		cellWidth = (int)d.getWidth() / (column + 2);
+		cellHeight = (int)d.getHeight() / (row + 2);
 
-		done = false;
+		isGameOver = false;
 
 		thick = new BasicStroke(7);
 		thin = new BasicStroke(2);
@@ -54,7 +54,7 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 
 		turn = 0;
 
-		rect = new Rectangle(RWidth, 0, RWidth, RHeight);
+		rect = new Rectangle(cellWidth, 0, cellWidth, cellHeight);
 		createNewPiece();
 
 		board = new GamePiece[rows][columns];
@@ -70,18 +70,99 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 
 	}
 
+
+	private void music() {
+		String tune = null;
+		Object[] options = {"Jazz", "Salt", "Silence"};
+		JOptionPane pane = new JOptionPane("Choose your ambience", JOptionPane.QUESTION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, options, options[0]);
+
+		JDialog dialog = pane.createDialog(null, "Music");
+		dialog.setVisible(true);
+		Object selectedValue = pane.getValue();
+		if(selectedValue != null && !Objects.equals(selectedValue.toString(), "Silence"))
+			for(int counter = 0, maxCounter = options.length - 1; counter < maxCounter; counter++)
+				if(options[counter].equals(selectedValue))
+					tune = options[counter].toString() + ".wav";
+
+
+		if(selectedValue != null && !Objects.equals(selectedValue.toString(), "Silence")) {
+			try {
+				AudioInputStream source = AudioSystem.getAudioInputStream(Board.class.getResourceAsStream("/" + tune));
+				DataLine.Info clipInfo = new DataLine.Info(Clip.class, source.getFormat());
+
+				if(AudioSystem.isLineSupported(clipInfo)) {
+					clip = (Clip)AudioSystem.getLine(clipInfo);
+					clip.open(source);
+				}
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+
+			clip.setFramePosition(0);
+			clip.loop(-1);
+		}
+	}
+
+	private void createNewPiece() {
+		if(turn % 2 == 0)//Make a red game piece
+			activePiece = new RedChip(rect);
+		else //Make a black game piece
+			activePiece = new BlackChip(rect);
+	}
+
+	private void reset(String message) {
+		JOptionPane.showMessageDialog(null, message);
+		turn = 0;
+		clearBoard();
+		applet.repaint();
+		createNewPiece();
+		isGameOver = false;
+	}
+
+	private void clearBoard() {
+		for(int r = 0; r < rows; ++r)
+			for(int c = 0; c < columns; ++c)
+				board[r][c] = null;
+	}
+
+	public void run() {
+		dropPiece();
+		createNewPiece();
+		applet.repaint();
+
+	}
+
+	private void dropPiece() {
+		int row = rows;
+		while(row > finalRow) {
+			activePiece.move(cellHeight);
+			--row;
+			applet.repaint();
+			try {
+				Thread.sleep(100);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		dropPieceThread = null;
+	}
+
+
+	// Determine winner
+
 	private void Winner(int r, int c) {
 		if(turn >= 7 && checkForWin(r, c)) {
-			done = true;
+			isGameOver = true;
 			incrementScore(board[r][c]);
 
 			if(board[r][c] instanceof RedChip)
-				reset("Red chip Wins");
+				reset("Red player Wins");
 			else if(board[r][c] instanceof BlackChip)
-				reset("Black chip Wins");
+				reset("Black player Wins");
 		}
 		else if(turn == columns * rows) {
-			done = true;
+			isGameOver = true;
 			reset("Tie Game!");
 		}
 	}
@@ -188,17 +269,17 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 			++blackScore;
 	}
 
-
+	// Draw Board
 	void draw(Graphics2D g2) {
-		if(isFocused || done) {
+		if(isFocused || isGameOver) {
 			//fill yellow rectangle
 			g2.setColor(Color.YELLOW);
-			g2.fillRect(RWidth, RHeight, columns * RWidth, rows * RHeight);
+			g2.fillRect(cellWidth, cellHeight, columns * cellWidth, rows * cellHeight);
 
 			//draw black border lines
 			g2.setStroke(thick);
 			g2.setColor(Color.BLACK);
-			g2.drawRect(RWidth, RHeight, columns * RWidth, rows * RHeight);
+			g2.drawRect(cellWidth, cellHeight, columns * cellWidth, rows * cellHeight);
 			g2.setStroke(thin);
 
 			//draw circles
@@ -207,20 +288,20 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 			for(int y = 0; y < rows; y++) {
 				for(int x = 0; x < columns; x++) {
 					g2.setColor(Color.BLUE);
-					g2.fillOval(x * RWidth + RWidth * 9 / 8, y * RHeight + RHeight * 9 / 8, RWidth * 3 / 4, RHeight * 3 / 4);
+					g2.fillOval(x * cellWidth + cellWidth * 9 / 8, y * cellHeight + cellHeight * 9 / 8, cellWidth * 3 / 4, cellHeight * 3 / 4);
 				}
 			}
 
 			//draw horizontal lines
 			g2.setColor(Color.BLACK);
 			for(int r = 2; r < (columns + 1); r++) {
-				g2.drawLine(RWidth, RHeight * r, (columns + 1) * RWidth, RHeight * r);
+				g2.drawLine(cellWidth, cellHeight * r, (columns + 1) * cellWidth, cellHeight * r);
 			}
 
 			//draw vertical lines
 			g2.setColor(Color.BLACK);
 			for(int r = 2; r < (columns + 1); r++) {
-				g2.drawLine(RWidth * r, RHeight, RWidth * r, (rows + 1) * RHeight);
+				g2.drawLine(cellWidth * r, cellHeight, cellWidth * r, (rows + 1) * cellHeight);
 			}
 			//draw chips
 			for(int r = 0; r < rows; r++)//rows on matrix
@@ -229,19 +310,17 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 						board[r][c].draw(g2);//draws chips
 
 			//draw movable chip
-			piece.draw(g2);
+			activePiece.draw(g2);
 
 
 			//Score
 			g2.setFont(font);
 			g2.setColor(Color.RED);
-			g2.drawString("Red", RWidth / 5, RHeight - RHeight / 2);
-			g2.drawString(String.valueOf(redScore), RWidth / 3, RHeight);
+			g2.drawString("Red", cellWidth / 5, cellHeight - cellHeight / 2);
+			g2.drawString(String.valueOf(redScore), cellWidth / 3, cellHeight);
 			g2.setColor(Color.BLACK);
-			g2.drawString("Black", applet.getWidth() - RWidth, RHeight - RHeight / 2);
-			g2.drawString(String.valueOf(blackScore), applet.getWidth() - RWidth + RWidth / 3, RHeight);
-
-			g2.draw(rect);
+			g2.drawString("Black", applet.getWidth() - cellWidth, cellHeight - cellHeight / 2);
+			g2.drawString(String.valueOf(blackScore), applet.getWidth() - cellWidth + cellWidth / 3, cellHeight);
 		}
 
 		else {
@@ -274,17 +353,17 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 	public void mouseExited(MouseEvent event) {}
 
 	public void mouseMoved(MouseEvent event) {
-		if(loop == null) {
-			int col = event.getX() / RWidth;
-			piece.setX(col * RWidth + RWidth / 8);
+		if(dropPieceThread == null) {
+			int col = event.getX() / cellWidth;
+			activePiece.setX(col * cellWidth + cellWidth / 8);
 			applet.repaint();
 		}
 	}
 
 	public void mousePressed(MouseEvent event) {
 		if(isFocused) {
-			if(loop == null) {
-				int col = event.getX() / RWidth - 1;
+			if(dropPieceThread == null) {
+				int col = event.getX() / cellWidth - 1;
 
 				if(col <= -1 || col >= columns)
 					JOptionPane.showMessageDialog(null, "Click on the board!");
@@ -295,13 +374,13 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 						JOptionPane.showMessageDialog(null, "That row is full! Choose another.");
 
 					if(row >= 0) {
-						board[row][col] = piece;
+						board[row][col] = activePiece;
 						++turn;
 						applet.repaint();
-						loop = new Thread(this);
-						loop.start();
+						dropPieceThread = new Thread(this);
+						dropPieceThread.start();
 						Winner(row, col);
-						rect.setLocation((col + 1) * RWidth, 0);//where chip is placed
+						rect.setLocation((col + 1) * cellWidth, 0);//where chip is placed
 					}
 
 				}
@@ -320,80 +399,6 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 			return -1;
 		else
 			return r;
-	}
-
-
-	private void music() {
-		String tune = null;
-		Object[] options = {"Jazz", "Salt", "Silence"};
-		JOptionPane pane = new JOptionPane("Choose your ambience", JOptionPane.QUESTION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, options, options[0]);
-
-		JDialog dialog = pane.createDialog(null, "Music");
-		dialog.setVisible(true);
-		Object selectedValue = pane.getValue();
-		if(selectedValue != null && !Objects.equals(selectedValue.toString(), "Silence"))
-			for(int counter = 0, maxCounter = options.length - 1; counter < maxCounter; counter++)
-				if(options[counter].equals(selectedValue))
-					tune = options[counter].toString() + ".wav";
-
-
-		if(selectedValue != null && !Objects.equals(selectedValue.toString(), "Silence")) {
-			try {
-				AudioInputStream source = AudioSystem.getAudioInputStream(Board.class.getResourceAsStream("/" + tune));
-				DataLine.Info clipInfo = new DataLine.Info(Clip.class, source.getFormat());
-
-				if(AudioSystem.isLineSupported(clipInfo)) {
-					clip = (Clip)AudioSystem.getLine(clipInfo);
-					clip.open(source);
-				}
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-
-			clip.setFramePosition(0);
-			clip.loop(-1);
-		}
-	}
-
-	private void createNewPiece() {
-		if(turn % 2 == 0)//Make a red game piece
-			piece = new RedChip(rect);
-		else //Make a black game piece
-			piece = new BlackChip(rect);
-	}
-
-	private void reset(String message) {
-		JOptionPane.showMessageDialog(null, message);
-		turn = 0;
-		clearBoard();
-		applet.repaint();
-		createNewPiece();
-		done = false;
-	}
-
-	private void clearBoard() {
-		for(int r = 0; r < rows; ++r)
-			for(int c = 0; c < columns; ++c)
-				board[r][c] = null;
-	}
-
-	public void run() {
-		int row = rows;
-		while(row > finalRow) {
-			piece.move(RHeight);
-			--row;
-			applet.repaint();
-			try {
-				Thread.sleep(100);
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-		}
-
-		loop = null;
-		createNewPiece();
-		applet.repaint();
-
 	}
 
 }
