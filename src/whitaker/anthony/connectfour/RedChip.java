@@ -1,14 +1,12 @@
 package whitaker.anthony.connectfour;
 
-	import java.awt.*;
+import java.awt.*;
 
 /**
  * @author Anthony R Whitaker
  */
-public class RedChip extends Chip
-{
-	public RedChip(Rectangle rect)
-	{
+public class RedChip extends Chip {
+	public RedChip(Rectangle rect) {
 		super(rect, Color.RED);
 	}
 
