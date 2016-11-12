@@ -10,22 +10,31 @@ import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * @author Anthony R Whitaker
  */
-public class Board implements MouseListener, FocusListener, Runnable, MouseMotionListener, KeyListener {
-	private Applet applet;
-	private BasicStroke thick, thin;
+class Board implements MouseListener, FocusListener, Runnable, MouseMotionListener, KeyListener {
+	private final Applet applet;
+	private final BasicStroke thick;
+	private final BasicStroke thin;
 	private boolean isFocused, done;
 	private Clip clip;
-	private Font font;
-	private GamePiece[][] board;
-	private GamePiece piece, nextPiece;
+	private final Font font;
+	private final GamePiece[][] board;
+	private GamePiece piece;
 	private Image image;
-	private int RWidth, RHeight, columns, rows, turn, redScore, blackScore, finalRow, mouseX;
-	private KeyTracker keyTracker;
-	private Rectangle rect;
+	private final int RWidth;
+	private final int RHeight;
+	private final int columns;
+	private final int rows;
+	private int turn;
+	private int redScore;
+	private int blackScore;
+	private int finalRow;
+	private final KeyTracker keyTracker;
+	private final Rectangle rect;
 	private Thread loop;
 
 	public Board(int row, int column, Dimension d, Applet a, Boolean focus) {
@@ -64,21 +73,21 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 
 	}
 
-	public void music() {
+	private void music() {
 		String tune = null;
 		Object[] options = {"Jazz", "Salt", "Silence"};
 		JOptionPane pane = new JOptionPane("Choose your ambience", JOptionPane.QUESTION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, options, options[0]);
 
 		JDialog dialog = pane.createDialog(null, "Music");
-		dialog.show();
+		dialog.setVisible(true);
 		Object selectedValue = pane.getValue();
-		if(selectedValue != null && selectedValue.toString() != "Silence")
+		if(selectedValue != null && !Objects.equals(selectedValue.toString(), "Silence"))
 			for(int counter = 0, maxCounter = options.length - 1; counter < maxCounter; counter++)
 				if(options[counter].equals(selectedValue))
 					tune = options[counter].toString() + ".wav";
 
 
-		if(selectedValue != null && selectedValue.toString() != "Silence") {
+		if(selectedValue != null && !Objects.equals(selectedValue.toString(), "Silence")) {
 			try {
 				AudioInputStream source = AudioSystem.getAudioInputStream(Board.class.getResourceAsStream("/" + tune));
 				DataLine.Info clipInfo = new DataLine.Info(Clip.class, source.getFormat());
@@ -97,7 +106,7 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 	}
 
 
-	public void draw(Graphics2D g2) {
+	void draw(Graphics2D g2) {
 		if(isFocused || done) {
 			//fill yellow rectangle
 			g2.setColor(Color.YELLOW);
@@ -203,7 +212,7 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 		}
 	}
 
-	public void movePiece() {
+	private void movePiece() {
 		if(loop == null) {
 			if(keyTracker.isPressed(KeyEvent.VK_LEFT)) {
 				piece.setX(piece.getX() - RWidth);
@@ -224,12 +233,12 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 	}
 
 	public void keyPressed(KeyEvent event) {
-		keyTracker.handleKeyPressed((KeyEvent)event);
+		keyTracker.handleKeyPressed(event);
 		movePiece();
 	}
 
 	public void keyReleased(KeyEvent event) {
-		keyTracker.handleKeyReleased((KeyEvent)event);
+		keyTracker.handleKeyReleased(event);
 	}
 
 	public void keyTyped(KeyEvent event) {}
@@ -252,14 +261,14 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 
 	}
 
-	public void newPiece() {
+	private void newPiece() {
 		if(turn % 2 == 0)//Make a black game piece
 			piece = new RedChip(rect);
 		if(turn % 2 == 1)//Make a red game piece
 			piece = new BlackChip(rect);
 	}
 
-	public int findEmptyRow(int c) {
+	private int findEmptyRow(int c) {
 		int r = 0;
 		while(r < rows && board[r][c] != null)
 			r++;
@@ -269,7 +278,7 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 			return r;
 	}
 
-	public boolean checkForWin(int r, int c) {
+	private boolean checkForWin(int r, int c) {
 		Class p = board[r][c].getClass();
 		int row = r;
 		int col = 0;
@@ -287,7 +296,6 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 			if(count >= 4)
 				return true;
 		}
-		row = r;
 		count = 0;
 
 		//Column
@@ -339,11 +347,11 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 		return false;
 	}
 
-	public boolean checkSpot(int r, int c, Class p) {
+	private boolean checkSpot(int r, int c, Class p) {
 		return board[r][c] != null && board[r][c].getClass().equals(p);
 	}
 
-	public void Winner(int r, int c) {
+	private void Winner(int r, int c) {
 		if(turn >= 7 && checkForWin(r, c)) {
 			done = true;
 			score(board[r][c].getClass().getName());
@@ -358,14 +366,14 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 		}
 	}
 
-	public void score(String c) {
+	private void score(String c) {
 		if(c.equals("whitaker.anthony.connectfour.RedChip"))
 			++redScore;
 		if(c.equals("BlackChip"))
 			++blackScore;
 	}
 
-	public void reset(String message) {
+	private void reset(String message) {
 		JOptionPane.showMessageDialog(null, message);
 		turn = 0;
 		for(int r = 0; r < rows; ++r)//Clear board

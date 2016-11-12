@@ -2,8 +2,8 @@ package whitaker.anthony.connectfour;
 
 import java.awt.event.KeyEvent;
 
-public class KeyTracker {
-	private boolean[] keyState;
+class KeyTracker {
+	private final boolean[] keyState;
 
 	public KeyTracker() {
 		keyState = new boolean[256];

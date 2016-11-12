@@ -5,10 +5,10 @@ import java.awt.geom.Ellipse2D;
 
 public abstract class Chip implements GamePiece {
 
-	private Ellipse2D chip;
-	private Color color;
+	private final Ellipse2D chip;
+	private final Color color;
 
-	public Chip(Rectangle rect, Color color) {
+	Chip(Rectangle rect, Color color) {
 		this.color = color;
 		chip = new Ellipse2D.Double(rect.getX() + rect.getWidth() * 1 / 8, rect.getY() + rect.getWidth() * 1 / 8, rect.getWidth() * 3 / 4, rect.getHeight() * 3 / 4);
 	}

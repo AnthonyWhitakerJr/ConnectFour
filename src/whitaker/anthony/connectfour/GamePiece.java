@@ -5,7 +5,7 @@ import java.awt.*;
 /**
  * @author Anthony R Whitaker
  */
-public interface GamePiece {
+interface GamePiece {
 	void draw(Graphics2D g2);
 
 	int getX();
