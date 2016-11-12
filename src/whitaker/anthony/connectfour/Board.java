@@ -15,14 +15,13 @@ import java.util.Objects;
 /**
  * @author Anthony R Whitaker
  */
-class Board implements MouseListener, FocusListener, Runnable, MouseMotionListener, KeyListener {
+class Board implements MouseListener, FocusListener, Runnable, MouseMotionListener {
 	private final int RHeight;
 	private final int RWidth;
 	private final Applet applet;
 	private final GamePiece[][] board;
 	private final int columns;
 	private final Font font;
-	private final KeyTracker keyTracker;
 	private final Rectangle rect;
 	private final int rows;
 	private final BasicStroke thick;
@@ -61,8 +60,6 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		board = new GamePiece[rows][columns];
 		isFocused = focus;
 
-		keyTracker = new KeyTracker();
-
 		try {
 			splashScreen = ImageIO.read(Board.class.getResourceAsStream("/C4Bgrd.jpg"));
 		} catch(IOException e) {
@@ -88,7 +85,6 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 			reset("Tie Game!");
 		}
 	}
-
 
 	private boolean checkForWin(int r, int c) {
 		Class p = board[r][c].getClass();
@@ -185,6 +181,14 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		return board[row][col] != null && board[row][col].getClass().equals(pieceClass);
 	}
 
+	private void incrementScore(GamePiece c) {
+		if(c instanceof RedChip)
+			++redScore;
+		else if(c instanceof BlackChip)
+			++blackScore;
+	}
+
+
 	void draw(Graphics2D g2) {
 		if(isFocused || done) {
 			//fill yellow rectangle
@@ -245,16 +249,8 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		}
 	}
 
-	private int findEmptyRow(int c) {
-		int r = 0;
-		while(r < rows && board[r][c] != null)
-			r++;
 
-		if(r >= rows)
-			return -1;
-		else
-			return r;
-	}
+	// FocusListener
 
 	public void focusGained(FocusEvent f) {
 		isFocused = true;
@@ -266,31 +262,8 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		applet.repaint();
 	}
 
-	public void handleEvent(AWTEvent e) {
-		if(e.getID() == KeyEvent.KEY_PRESSED)
-			keyTracker.handleKeyPressed((KeyEvent)e);
-		if(e.getID() == KeyEvent.KEY_RELEASED)
-			keyTracker.handleKeyReleased((KeyEvent)e);
 
-	}
-
-	private void incrementScore(GamePiece c) {
-		if(c instanceof RedChip)
-			++redScore;
-		else if(c instanceof BlackChip)
-			++blackScore;
-	}
-
-	public void keyPressed(KeyEvent event) {
-		keyTracker.handleKeyPressed(event);
-		movePiece();
-	}
-
-	public void keyReleased(KeyEvent event) {
-		keyTracker.handleKeyReleased(event);
-	}
-
-	public void keyTyped(KeyEvent event) {}
+	// MouseListener
 
 	public void mouseClicked(MouseEvent event) {}
 
@@ -338,17 +311,17 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 
 	public void mouseReleased(MouseEvent event) {}
 
-	private void movePiece() {
-		if(loop == null) {
-			if(keyTracker.isPressed(KeyEvent.VK_LEFT)) {
-				piece.setX(piece.getX() - RWidth);
-			}
+	private int findEmptyRow(int c) {
+		int r = 0;
+		while(r < rows && board[r][c] != null)
+			r++;
 
-			else if(keyTracker.isPressed(KeyEvent.VK_RIGHT)) {
-				piece.setX(piece.getX() + RWidth);
-			}
-		}
+		if(r >= rows)
+			return -1;
+		else
+			return r;
 	}
+
 
 	private void music() {
 		String tune = null;
@@ -392,12 +365,16 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 	private void reset(String message) {
 		JOptionPane.showMessageDialog(null, message);
 		turn = 0;
-		for(int r = 0; r < rows; ++r)//Clear board
-			for(int c = 0; c < columns; ++c)
-				board[r][c] = null;
+		clearBoard();
 		applet.repaint();
 		createNewPiece();
 		done = false;
+	}
+
+	private void clearBoard() {
+		for(int r = 0; r < rows; ++r)
+			for(int c = 0; c < columns; ++c)
+				board[r][c] = null;
 	}
 
 	public void run() {
