@@ -8,7 +8,6 @@ import javax.swing.*;
 import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
 import java.io.IOException;
 
 public class Board implements MouseListener, FocusListener, Runnable, MouseMotionListener, KeyListener
@@ -58,7 +57,7 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 	
 		try
 		{
-			image=ImageIO.read(new File("C4Bgrd.jpg"));
+			image=ImageIO.read(Board.class.getResourceAsStream("C4Bgrd.jpg"));
 		}
 		catch (IOException e)
 		{
@@ -100,10 +99,9 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 
 	    if(selectedValue!=null&&selectedValue.toString()!="Silence")
 		{
-			File soundFile=new File(tune);
 			try
 			{
-				AudioInputStream source=AudioSystem.getAudioInputStream(soundFile);
+				AudioInputStream source=AudioSystem.getAudioInputStream(Board.class.getResourceAsStream(tune));
 				DataLine.Info clipInfo=new DataLine.Info(Clip.class,source.getFormat());
 				
 				if(AudioSystem.isLineSupported(clipInfo))
