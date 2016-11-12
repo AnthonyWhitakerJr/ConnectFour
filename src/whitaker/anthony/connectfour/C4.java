@@ -21,7 +21,6 @@ public class C4 extends Applet {
 		addMouseListener(board);
 		addFocusListener(board);
 		addMouseMotionListener(board);
-		addKeyListener(board);
 	}
 
 	public void paint(Graphics g) {
