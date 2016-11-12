@@ -1,6 +1,9 @@
-//Anthony R Whitaker
+package whitaker.anthony.connectfour;
 import java.awt.*;
 
+/**
+ * @author Anthony R Whitaker
+ */
 public interface GamePiece
 {
 	void draw(Graphics2D g2);

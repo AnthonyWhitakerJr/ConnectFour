@@ -1,4 +1,4 @@
-//Anthony R Whitaker
+package whitaker.anthony.connectfour;
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -10,6 +10,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 
+/**
+ * @author Anthony R Whitaker
+ */
 public class Board implements MouseListener, FocusListener, Runnable, MouseMotionListener, KeyListener
 {
 	private Applet applet;
@@ -54,7 +57,7 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 
 		try
 		{
-			image=ImageIO.read(Board.class.getResourceAsStream("C4Bgrd.jpg"));
+			image=ImageIO.read(Board.class.getResourceAsStream("/C4Bgrd.jpg"));
 		}
 		catch (IOException e)
 		{
@@ -84,7 +87,7 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 		{
 			try
 			{
-				AudioInputStream source=AudioSystem.getAudioInputStream(Board.class.getResourceAsStream(tune));
+				AudioInputStream source=AudioSystem.getAudioInputStream(Board.class.getResourceAsStream("/"+tune));
 				DataLine.Info clipInfo=new DataLine.Info(Clip.class,source.getFormat());
 				
 				if(AudioSystem.isLineSupported(clipInfo))
@@ -379,7 +382,7 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 		{
 			done=true;	
 			score(board[r][c].getClass().getName());
-			if (board[r][c].getClass().getName().equals("RedChip"))
+			if (board[r][c].getClass().getName().equals("whitaker.anthony.connectfour.RedChip"))
 					reset("Red chip Wins");	
 			else if (board[r][c].getClass().getName().equals("BlackChip"))
 					reset("Black chip Wins");
@@ -392,7 +395,7 @@ public class Board implements MouseListener, FocusListener, Runnable, MouseMotio
 	}
 	public void score(String c)
 	{
-		if (c.equals("RedChip"))
+		if (c.equals("whitaker.anthony.connectfour.RedChip"))
 			++redScore;
 		if (c.equals("BlackChip"))
 			++blackScore;

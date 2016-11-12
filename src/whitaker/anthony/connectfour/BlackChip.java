@@ -1,8 +1,11 @@
-//Anthony R Whitaker
+package whitaker.anthony.connectfour;
 
 	import java.awt.*;
 	import java.awt.geom.*;
 
+/**
+ * @author Anthony R Whitaker
+ */
 public class BlackChip implements GamePiece
 {
 	private Ellipse2D chip;

@@ -1,9 +1,11 @@
-//Anthony R Whitaker
+package whitaker.anthony.connectfour;
 import java.applet.Applet;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-
+/**
+ * @author Anthony R Whitaker
+ */
 public class C4 extends Applet 
 {
 
