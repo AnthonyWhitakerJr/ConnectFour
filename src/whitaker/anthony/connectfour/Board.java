@@ -16,26 +16,26 @@ import java.util.Objects;
  * @author Anthony R Whitaker
  */
 class Board implements MouseListener, FocusListener, Runnable, MouseMotionListener, KeyListener {
-	private final Applet applet;
-	private final BasicStroke thick;
-	private final BasicStroke thin;
-	private boolean isFocused, done;
-	private Clip clip;
-	private final Font font;
-	private final GamePiece[][] board;
-	private GamePiece piece;
-	private Image image;
-	private final int RWidth;
 	private final int RHeight;
+	private final int RWidth;
+	private final Applet applet;
+	private final GamePiece[][] board;
 	private final int columns;
-	private final int rows;
-	private int turn;
-	private int redScore;
-	private int blackScore;
-	private int finalRow;
+	private final Font font;
 	private final KeyTracker keyTracker;
 	private final Rectangle rect;
+	private final int rows;
+	private final BasicStroke thick;
+	private final BasicStroke thin;
+	private int blackScore;
+	private Clip clip;
+	private int finalRow;
+	private Image image;
+	private boolean isFocused, done;
 	private Thread loop;
+	private GamePiece piece;
+	private int redScore;
+	private int turn;
 
 	public Board(int row, int column, Dimension d, Applet a, Boolean focus) {
 		applet = a;
@@ -73,209 +73,19 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 
 	}
 
-	private void music() {
-		String tune = null;
-		Object[] options = {"Jazz", "Salt", "Silence"};
-		JOptionPane pane = new JOptionPane("Choose your ambience", JOptionPane.QUESTION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, options, options[0]);
-
-		JDialog dialog = pane.createDialog(null, "Music");
-		dialog.setVisible(true);
-		Object selectedValue = pane.getValue();
-		if(selectedValue != null && !Objects.equals(selectedValue.toString(), "Silence"))
-			for(int counter = 0, maxCounter = options.length - 1; counter < maxCounter; counter++)
-				if(options[counter].equals(selectedValue))
-					tune = options[counter].toString() + ".wav";
-
-
-		if(selectedValue != null && !Objects.equals(selectedValue.toString(), "Silence")) {
-			try {
-				AudioInputStream source = AudioSystem.getAudioInputStream(Board.class.getResourceAsStream("/" + tune));
-				DataLine.Info clipInfo = new DataLine.Info(Clip.class, source.getFormat());
-
-				if(AudioSystem.isLineSupported(clipInfo)) {
-					clip = (Clip)AudioSystem.getLine(clipInfo);
-					clip.open(source);
-				}
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-
-			clip.setFramePosition(0);
-			clip.loop(-1);
+	private void Winner(int r, int c) {
+		if(turn >= 7 && checkForWin(r, c)) {
+			done = true;
+			score(board[r][c].getClass().getName());
+			if(board[r][c].getClass().getName().equals("whitaker.anthony.connectfour.RedChip"))
+				reset("Red chip Wins");
+			else if(board[r][c].getClass().getName().equals("BlackChip"))
+				reset("Black chip Wins");
 		}
-	}
-
-
-	void draw(Graphics2D g2) {
-		if(isFocused || done) {
-			//fill yellow rectangle
-			g2.setColor(Color.YELLOW);
-			g2.fillRect(RWidth, RHeight, columns * RWidth, rows * RHeight);
-
-			//draw black border lines
-			g2.setStroke(thick);
-			g2.setColor(Color.BLACK);
-			g2.drawRect(RWidth, RHeight, columns * RWidth, rows * RHeight);
-			g2.setStroke(thin);
-
-			//draw circles
-			//circles = 3/4 size of square
-
-			for(int y = 0; y < rows; y++) {
-				for(int x = 0; x < columns; x++) {
-					g2.setColor(Color.BLUE);
-					g2.fillOval(x * RWidth + RWidth * 9 / 8, y * RHeight + RHeight * 9 / 8, RWidth * 3 / 4, RHeight * 3 / 4);
-				}
-			}
-
-			//draw horizontal lines
-			g2.setColor(Color.BLACK);
-			for(int r = 2; r < (columns + 1); r++) {
-				g2.drawLine(RWidth, RHeight * r, (columns + 1) * RWidth, RHeight * r);
-			}
-
-			//draw vertical lines
-			g2.setColor(Color.BLACK);
-			for(int r = 2; r < (columns + 1); r++) {
-				g2.drawLine(RWidth * r, RHeight, RWidth * r, (rows + 1) * RHeight);
-			}
-			//draw chips
-			for(int r = 0; r < rows; r++)//rows on matrix
-				for(int c = 0; c < columns; c++)//columns on matrix
-					if(board[r][c] != null)//doesn't draw on startup
-						board[r][c].draw(g2);//draws chips
-
-			//draw movable chip
-			piece.draw(g2);
-
-
-			//Score
-			g2.setFont(font);
-			g2.setColor(Color.RED);
-			g2.drawString("Red", RWidth / 5, RHeight - RHeight / 2);
-			g2.drawString(String.valueOf(redScore), RWidth / 3, RHeight);
-			g2.setColor(Color.BLACK);
-			g2.drawString("Black", applet.getWidth() - RWidth, RHeight - RHeight / 2);
-			g2.drawString(String.valueOf(blackScore), applet.getWidth() - RWidth + RWidth / 3, RHeight);
-
-			g2.draw(rect);
+		else if(turn == columns * rows) {
+			done = true;
+			reset("Tie Game!");
 		}
-
-		else {
-			g2.drawImage(image, 0, 0, applet.getWidth(), applet.getHeight(), null);
-		}
-	}
-
-	public void mousePressed(MouseEvent event) {
-		if(isFocused) {
-			if(loop == null) {
-				int col = event.getX() / RWidth - 1;
-
-				if(col <= -1 || col >= columns)
-					JOptionPane.showMessageDialog(null, "Click on the board!");
-				else {
-					int row = findEmptyRow(col);
-					finalRow = row;
-					if(row < 0)
-						JOptionPane.showMessageDialog(null, "That row is full! Choose another.");
-
-					if(row >= 0) {
-						board[row][col] = piece;
-						++turn;
-						applet.repaint();
-						loop = new Thread(this);
-						loop.start();
-						Winner(row, col);
-						rect.setLocation((col + 1) * RWidth, 0);//where chip is placed
-					}
-
-				}
-			}
-		}
-	}
-
-	public void mouseEntered(MouseEvent event) {}
-
-	public void mouseExited(MouseEvent event) {}
-
-	public void mouseClicked(MouseEvent event) {}
-
-	public void mouseReleased(MouseEvent event) {}
-
-	public void mouseDragged(MouseEvent event) {}
-
-	public void mouseMoved(MouseEvent event) {
-		if(loop == null) {
-			int col = event.getX() / RWidth;
-			piece.setX(col * RWidth + RWidth / 8);
-			applet.repaint();
-		}
-	}
-
-	private void movePiece() {
-		if(loop == null) {
-			if(keyTracker.isPressed(KeyEvent.VK_LEFT)) {
-				piece.setX(piece.getX() - RWidth);
-			}
-
-			else if(keyTracker.isPressed(KeyEvent.VK_RIGHT)) {
-				piece.setX(piece.getX() + RWidth);
-			}
-		}
-	}
-
-	public void handleEvent(AWTEvent e) {
-		if(e.getID() == KeyEvent.KEY_PRESSED)
-			keyTracker.handleKeyPressed((KeyEvent)e);
-		if(e.getID() == KeyEvent.KEY_RELEASED)
-			keyTracker.handleKeyReleased((KeyEvent)e);
-
-	}
-
-	public void keyPressed(KeyEvent event) {
-		keyTracker.handleKeyPressed(event);
-		movePiece();
-	}
-
-	public void keyReleased(KeyEvent event) {
-		keyTracker.handleKeyReleased(event);
-	}
-
-	public void keyTyped(KeyEvent event) {}
-
-	public void run() {
-		int row = rows;
-		while(row > finalRow) {
-			piece.move(RHeight);
-			--row;
-			applet.repaint();
-			try {
-				Thread.sleep(100);
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-		}
-		loop = null;
-		newPiece();
-		applet.repaint();
-
-	}
-
-	private void newPiece() {
-		if(turn % 2 == 0)//Make a black game piece
-			piece = new RedChip(rect);
-		if(turn % 2 == 1)//Make a red game piece
-			piece = new BlackChip(rect);
-	}
-
-	private int findEmptyRow(int c) {
-		int r = 0;
-		while(r < rows && board[r][c] != null)
-			r++;
-		if(r >= rows)
-			return -1;
-		else
-			return r;
 	}
 
 	private boolean checkForWin(int r, int c) {
@@ -351,26 +161,200 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		return board[r][c] != null && board[r][c].getClass().equals(p);
 	}
 
-	private void Winner(int r, int c) {
-		if(turn >= 7 && checkForWin(r, c)) {
-			done = true;
-			score(board[r][c].getClass().getName());
-			if(board[r][c].getClass().getName().equals("whitaker.anthony.connectfour.RedChip"))
-				reset("Red chip Wins");
-			else if(board[r][c].getClass().getName().equals("BlackChip"))
-				reset("Black chip Wins");
+	void draw(Graphics2D g2) {
+		if(isFocused || done) {
+			//fill yellow rectangle
+			g2.setColor(Color.YELLOW);
+			g2.fillRect(RWidth, RHeight, columns * RWidth, rows * RHeight);
+
+			//draw black border lines
+			g2.setStroke(thick);
+			g2.setColor(Color.BLACK);
+			g2.drawRect(RWidth, RHeight, columns * RWidth, rows * RHeight);
+			g2.setStroke(thin);
+
+			//draw circles
+			//circles = 3/4 size of square
+
+			for(int y = 0; y < rows; y++) {
+				for(int x = 0; x < columns; x++) {
+					g2.setColor(Color.BLUE);
+					g2.fillOval(x * RWidth + RWidth * 9 / 8, y * RHeight + RHeight * 9 / 8, RWidth * 3 / 4, RHeight * 3 / 4);
+				}
+			}
+
+			//draw horizontal lines
+			g2.setColor(Color.BLACK);
+			for(int r = 2; r < (columns + 1); r++) {
+				g2.drawLine(RWidth, RHeight * r, (columns + 1) * RWidth, RHeight * r);
+			}
+
+			//draw vertical lines
+			g2.setColor(Color.BLACK);
+			for(int r = 2; r < (columns + 1); r++) {
+				g2.drawLine(RWidth * r, RHeight, RWidth * r, (rows + 1) * RHeight);
+			}
+			//draw chips
+			for(int r = 0; r < rows; r++)//rows on matrix
+				for(int c = 0; c < columns; c++)//columns on matrix
+					if(board[r][c] != null)//doesn't draw on startup
+						board[r][c].draw(g2);//draws chips
+
+			//draw movable chip
+			piece.draw(g2);
+
+
+			//Score
+			g2.setFont(font);
+			g2.setColor(Color.RED);
+			g2.drawString("Red", RWidth / 5, RHeight - RHeight / 2);
+			g2.drawString(String.valueOf(redScore), RWidth / 3, RHeight);
+			g2.setColor(Color.BLACK);
+			g2.drawString("Black", applet.getWidth() - RWidth, RHeight - RHeight / 2);
+			g2.drawString(String.valueOf(blackScore), applet.getWidth() - RWidth + RWidth / 3, RHeight);
+
+			g2.draw(rect);
 		}
-		else if(turn == columns * rows) {
-			done = true;
-			reset("Tie Game!");
+
+		else {
+			g2.drawImage(image, 0, 0, applet.getWidth(), applet.getHeight(), null);
 		}
 	}
 
-	private void score(String c) {
-		if(c.equals("whitaker.anthony.connectfour.RedChip"))
-			++redScore;
-		if(c.equals("BlackChip"))
-			++blackScore;
+	private int findEmptyRow(int c) {
+		int r = 0;
+		while(r < rows && board[r][c] != null)
+			r++;
+		if(r >= rows)
+			return -1;
+		else
+			return r;
+	}
+
+	public void focusGained(FocusEvent f) {
+		isFocused = true;
+		applet.repaint();
+	}
+
+	public void focusLost(FocusEvent f) {
+		isFocused = false;
+		applet.repaint();
+	}
+
+	public void handleEvent(AWTEvent e) {
+		if(e.getID() == KeyEvent.KEY_PRESSED)
+			keyTracker.handleKeyPressed((KeyEvent)e);
+		if(e.getID() == KeyEvent.KEY_RELEASED)
+			keyTracker.handleKeyReleased((KeyEvent)e);
+
+	}
+
+	public void keyPressed(KeyEvent event) {
+		keyTracker.handleKeyPressed(event);
+		movePiece();
+	}
+
+	public void keyReleased(KeyEvent event) {
+		keyTracker.handleKeyReleased(event);
+	}
+
+	public void keyTyped(KeyEvent event) {}
+
+	public void mouseClicked(MouseEvent event) {}
+
+	public void mouseDragged(MouseEvent event) {}
+
+	public void mouseEntered(MouseEvent event) {}
+
+	public void mouseExited(MouseEvent event) {}
+
+	public void mouseMoved(MouseEvent event) {
+		if(loop == null) {
+			int col = event.getX() / RWidth;
+			piece.setX(col * RWidth + RWidth / 8);
+			applet.repaint();
+		}
+	}
+
+	public void mousePressed(MouseEvent event) {
+		if(isFocused) {
+			if(loop == null) {
+				int col = event.getX() / RWidth - 1;
+
+				if(col <= -1 || col >= columns)
+					JOptionPane.showMessageDialog(null, "Click on the board!");
+				else {
+					int row = findEmptyRow(col);
+					finalRow = row;
+					if(row < 0)
+						JOptionPane.showMessageDialog(null, "That row is full! Choose another.");
+
+					if(row >= 0) {
+						board[row][col] = piece;
+						++turn;
+						applet.repaint();
+						loop = new Thread(this);
+						loop.start();
+						Winner(row, col);
+						rect.setLocation((col + 1) * RWidth, 0);//where chip is placed
+					}
+
+				}
+			}
+		}
+	}
+
+	public void mouseReleased(MouseEvent event) {}
+
+	private void movePiece() {
+		if(loop == null) {
+			if(keyTracker.isPressed(KeyEvent.VK_LEFT)) {
+				piece.setX(piece.getX() - RWidth);
+			}
+
+			else if(keyTracker.isPressed(KeyEvent.VK_RIGHT)) {
+				piece.setX(piece.getX() + RWidth);
+			}
+		}
+	}
+
+	private void music() {
+		String tune = null;
+		Object[] options = {"Jazz", "Salt", "Silence"};
+		JOptionPane pane = new JOptionPane("Choose your ambience", JOptionPane.QUESTION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, options, options[0]);
+
+		JDialog dialog = pane.createDialog(null, "Music");
+		dialog.setVisible(true);
+		Object selectedValue = pane.getValue();
+		if(selectedValue != null && !Objects.equals(selectedValue.toString(), "Silence"))
+			for(int counter = 0, maxCounter = options.length - 1; counter < maxCounter; counter++)
+				if(options[counter].equals(selectedValue))
+					tune = options[counter].toString() + ".wav";
+
+
+		if(selectedValue != null && !Objects.equals(selectedValue.toString(), "Silence")) {
+			try {
+				AudioInputStream source = AudioSystem.getAudioInputStream(Board.class.getResourceAsStream("/" + tune));
+				DataLine.Info clipInfo = new DataLine.Info(Clip.class, source.getFormat());
+
+				if(AudioSystem.isLineSupported(clipInfo)) {
+					clip = (Clip)AudioSystem.getLine(clipInfo);
+					clip.open(source);
+				}
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+
+			clip.setFramePosition(0);
+			clip.loop(-1);
+		}
+	}
+
+	private void newPiece() {
+		if(turn % 2 == 0)//Make a black game piece
+			piece = new RedChip(rect);
+		if(turn % 2 == 1)//Make a red game piece
+			piece = new BlackChip(rect);
 	}
 
 	private void reset(String message) {
@@ -384,14 +368,29 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		done = false;
 	}
 
-	public void focusLost(FocusEvent f) {
-		isFocused = false;
+	public void run() {
+		int row = rows;
+		while(row > finalRow) {
+			piece.move(RHeight);
+			--row;
+			applet.repaint();
+			try {
+				Thread.sleep(100);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		loop = null;
+		newPiece();
 		applet.repaint();
+
 	}
 
-	public void focusGained(FocusEvent f) {
-		isFocused = true;
-		applet.repaint();
+	private void score(String c) {
+		if(c.equals("whitaker.anthony.connectfour.RedChip"))
+			++redScore;
+		if(c.equals("BlackChip"))
+			++blackScore;
 	}
 
 }
