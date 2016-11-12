@@ -76,7 +76,8 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 	private void Winner(int r, int c) {
 		if(turn >= 7 && checkForWin(r, c)) {
 			done = true;
-			score(board[r][c].getClass().getName());
+			incrementScore(board[r][c]);
+
 			if(board[r][c] instanceof  RedChip)
 				reset("Red chip Wins");
 			else if(board[r][c] instanceof BlackChip)
@@ -386,10 +387,10 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 
 	}
 
-	private void score(String c) {
-		if(c.equals("whitaker.anthony.connectfour.RedChip"))
+	private void incrementScore(GamePiece c) {
+		if(c instanceof RedChip)
 			++redScore;
-		if(c.equals("BlackChip"))
+		else if(c instanceof BlackChip)
 			++blackScore;
 	}
 
