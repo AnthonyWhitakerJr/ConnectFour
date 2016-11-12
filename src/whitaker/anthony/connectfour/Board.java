@@ -30,14 +30,14 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 	private int blackScore;
 	private Clip clip;
 	private int finalRow;
-	private Image image;
+	private Image splashScreen;
 	private boolean isFocused, done;
 	private Thread loop;
 	private GamePiece piece;
 	private int redScore;
 	private int turn;
 
-	public Board(int row, int column, Dimension d, Applet a, Boolean focus) {
+	Board(int row, int column, Dimension d, Applet a, Boolean focus) {
 		applet = a;
 
 		RWidth = (int)d.getWidth() / (column + 2);
@@ -56,7 +56,7 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		turn = 0;
 
 		rect = new Rectangle(RWidth, 0, RWidth, RHeight);
-		newPiece();
+		createNewPiece();
 
 		board = new GamePiece[rows][columns];
 		isFocused = focus;
@@ -64,7 +64,7 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		keyTracker = new KeyTracker();
 
 		try {
-			image = ImageIO.read(Board.class.getResourceAsStream("/C4Bgrd.jpg"));
+			splashScreen = ImageIO.read(Board.class.getResourceAsStream("/C4Bgrd.jpg"));
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
@@ -241,7 +241,7 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		}
 
 		else {
-			g2.drawImage(image, 0, 0, applet.getWidth(), applet.getHeight(), null);
+			g2.drawImage(splashScreen, 0, 0, applet.getWidth(), applet.getHeight(), null);
 		}
 	}
 
@@ -249,6 +249,7 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		int r = 0;
 		while(r < rows && board[r][c] != null)
 			r++;
+
 		if(r >= rows)
 			return -1;
 		else
@@ -381,10 +382,10 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 		}
 	}
 
-	private void newPiece() {
-		if(turn % 2 == 0)//Make a black game piece
+	private void createNewPiece() {
+		if(turn % 2 == 0)//Make a red game piece
 			piece = new RedChip(rect);
-		if(turn % 2 == 1)//Make a red game piece
+		else //Make a black game piece
 			piece = new BlackChip(rect);
 	}
 
@@ -395,7 +396,7 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 			for(int c = 0; c < columns; ++c)
 				board[r][c] = null;
 		applet.repaint();
-		newPiece();
+		createNewPiece();
 		done = false;
 	}
 
@@ -411,8 +412,9 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 				e.printStackTrace();
 			}
 		}
+
 		loop = null;
-		newPiece();
+		createNewPiece();
 		applet.repaint();
 
 	}
