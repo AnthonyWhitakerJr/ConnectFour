@@ -78,7 +78,7 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 			done = true;
 			incrementScore(board[r][c]);
 
-			if(board[r][c] instanceof  RedChip)
+			if(board[r][c] instanceof RedChip)
 				reset("Red chip Wins");
 			else if(board[r][c] instanceof BlackChip)
 				reset("Black chip Wins");
@@ -93,20 +93,10 @@ class Board implements MouseListener, FocusListener, Runnable, MouseMotionListen
 	private boolean checkForWin(int r, int c) {
 		Class p = board[r][c].getClass();
 
-		//Row
-		if(checkForWin_Row(r, p)) return true;
-
-		//Column
-		if(checkForWin_Column(r, c, p)) return true;
-
-		//Diag left-->right
-		if(checkForWin_DiagonalLeftToRight(r, c, p)) return true;
-		int a;
-
-		//Diag right-->left
-		if(checkForWin_DiagonalRightToLeft(r, c, p)) return true;
-
-		return false;
+		return checkForWin_Row(r, p)
+				|| checkForWin_Column(r, c, p)
+				|| checkForWin_DiagonalLeftToRight(r, c, p)
+				|| checkForWin_DiagonalRightToLeft(r, c, p);
 	}
 
 	private boolean checkForWin_Column(int row, int col, Class pieceClass) {
